@@ -49,12 +49,33 @@ function clamp(value) {
     return Math.max(0, Math.min(255, Math.round(value)));
 }
 
-// 防止滚动和缩放
-document.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
-document.addEventListener('gesturestart', e => e.preventDefault());
+// 优化移动端触摸事件处理
+function handleTouchMove(e) {
+    // 只有在滑动控制条时才阻止默认行为
+    if (e.target.type === 'range') {
+        e.preventDefault();
+    }
+}
 
+// 移除全局触摸事件阻止
+document.removeEventListener('touchmove', e => e.preventDefault());
+
+// 为控制面板添加触摸事件处理
+const controls = document.querySelector('.controls');
+controls.addEventListener('touchmove', handleTouchMove, { passive: false });
+
+// 添加移动端事件监听
+brightnessSlider.addEventListener('touchstart', () => {}, { passive: true });
+brightnessSlider.addEventListener('touchmove', () => {}, { passive: true });
+temperatureSlider.addEventListener('touchstart', () => {}, { passive: true });
+temperatureSlider.addEventListener('touchmove', () => {}, { passive: true });
+
+// 添加输入事件监听
 brightnessSlider.addEventListener('input', updateLight);
 temperatureSlider.addEventListener('input', updateLight);
+
+// 防止双指缩放
+document.addEventListener('gesturestart', e => e.preventDefault());
 
 // 初始化
 updateLight();
@@ -62,8 +83,10 @@ updateLight();
 // 保持屏幕常亮
 if (navigator.wakeLock) {
     try {
-        navigator.wakeLock.request('screen');
+        navigator.wakeLock.request('screen').catch(err => {
+            console.log('Screen wake lock error:', err.message);
+        });
     } catch (err) {
-        console.log(err.name, err.message);
+        console.log('Wake lock error:', err.message);
     }
 } 
